@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution
+dist/
+build/
+*.whl
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Database
+*.db
+*.sqlite3
+crm.db
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Alembic
+# (migrations are committed; __pycache__ is excluded above)
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
