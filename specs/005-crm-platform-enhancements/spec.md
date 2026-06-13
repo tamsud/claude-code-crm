@@ -258,6 +258,26 @@ The current user's profile (name, email, role) is accessible via a clearly visib
 
 ---
 
+### User Story 16 - Full UI/UX Modernisation (Priority: P4)
+
+The entire CRM application UI is redesigned to match contemporary SaaS product standards. The login page is fully responsive and modern. The sidebar is collapsible with icon-only mode. The dashboard shows KPI cards and polished charts. All pages have skeleton loaders, smooth transitions, and consistent design tokens. The application is fully usable across desktop, laptop, tablet, and mobile screen sizes.
+
+**Why this priority**: The existing UI (US9 brand colours and badges) is a necessary foundation but does not meet the enterprise-grade SaaS standard described in the brief. This user story delivers the full visual modernisation on top of the working functional system.
+
+**Independent Test**: Open the app on a 1366×768 laptop screen → login page fits viewport without scrolling. Collapse the sidebar → icons remain visible. Navigate to Dashboard → KPI cards show real values with skeleton loaders during data fetch. Resize to 768px → layout reflows to single-column. Resize to 375px → hamburger menu opens slide-in drawer.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user opens the login page on a 1366×768 screen, **When** the page renders, **Then** the entire login UI is visible without vertical scrolling and shows a two-panel design (brand left, form right).
+2. **Given** a user on desktop clicks the sidebar collapse button, **When** the transition completes, **Then** the sidebar is 64px wide showing icons only, within 200ms.
+3. **Given** a user on a tablet (768px wide), **When** the app loads, **Then** the sidebar is hidden and a hamburger button is visible in the top navigation bar.
+4. **Given** any list page is loading data, **When** the query is in-flight, **Then** skeleton loaders matching the expected content shape are displayed.
+5. **Given** the Dashboard page loads, **When** data resolves, **Then** four KPI cards are visible (Total Leads, Open Opportunities Value, Active Accounts, Activities Due Today).
+6. **Given** any interactive element is focused via keyboard, **When** it receives focus, **Then** a visible focus ring is displayed (WCAG 2.1 AA).
+7. **Given** the app renders, **When** any text element is measured, **Then** the Inter typeface is applied.
+
+---
+
 ### Edge Cases
 
 - What happens when a JWT token expires mid-session? → API returns 401, frontend clears token and redirects to /login.
@@ -268,6 +288,9 @@ The current user's profile (name, email, role) is accessible via a clearly visib
 - What happens if a lead is created with missing required fields? → Validation error, no mock email sent.
 - What happens if a sort column is invalid? → Backend ignores it, falls back to default sort (created_at desc).
 - What happens if a search query returns no results? → Empty state with a "No results for '…'" message and a clear-filters button.
+- What happens if the sidebar is collapsed on a mobile screen? → Sidebar renders as a drawer regardless of collapsed state; collapsed preference applies only on desktop/laptop.
+- What happens if Inter font fails to load? → System font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`) is the CSS fallback.
+- What happens if a KPI count API call fails? → KPI card shows an error icon with "--" value; does not block other cards from rendering.
 
 ## Requirements *(mandatory)*
 
@@ -357,6 +380,19 @@ The current user's profile (name, email, role) is accessible via a clearly visib
 - **FR-044**: The NavSidebar MUST display the current user's display name (or email) and role badge at the bottom, as a clickable link to /profile.
 - **FR-045**: The /profile page MUST allow the logged-in user to update their display name via PATCH /api/v1/users/me.
 
+**UI/UX Modernisation (US16)**
+
+- **FR-046**: The application MUST be fully responsive across four breakpoints: `sm` (640px), `md` (768px), `lg` (1024px), `xl` (1280px). All pages MUST be usable at each breakpoint.
+- **FR-047**: The login page MUST display a two-panel layout (brand panel left + form panel right) on `lg+` screens, and a single-column centred card on `<lg` screens. The login form MUST be fully visible without vertical scrolling on a 1366×768 viewport.
+- **FR-048**: The NavSidebar MUST support a collapsible icon-only mode (64px wide) toggled by a chevron button, with CSS `transition-all duration-200`. Collapsed state MUST persist in `localStorage` key `crm-sidebar-collapsed`.
+- **FR-049**: On `<md` screens the sidebar MUST render as a slide-in drawer overlay triggered by a hamburger button in the top navigation bar.
+- **FR-050**: All TanStack Query `isLoading` states on list pages, Dashboard KPI cards, and Detail page headers MUST display skeleton loaders (Tailwind `animate-pulse`) matching the approximate shape of the loaded content.
+- **FR-051**: The Dashboard MUST display four KPI stat cards: Total Leads, Open Opportunities Value, Active Accounts, Activities Due Today. Values fetched from existing API endpoints with no new backend routes.
+- **FR-052**: All interactive elements (buttons, links, inputs, selects) MUST display a visible focus ring using `focus-visible:ring-2 focus-visible:ring-indigo-500` to meet WCAG 2.1 AA keyboard accessibility.
+- **FR-053**: The Inter typeface MUST be used for all UI text, loaded via `@fontsource/inter` (400 and 600 weights). No external CDN dependencies.
+- **FR-054**: `tailwind.config.ts` MUST define a design token layer covering: `colors.brand.*`, `colors.surface.*`, `borderRadius.card`, `boxShadow.card`, `boxShadow.dropdown`.
+- **FR-055**: All colour tokens MUST maintain a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text against their background, per WCAG 2.1 AA.
+
 ### Key Entities
 
 - **User**: id, email, hashed_password, display_name (nullable), role (admin|manager|sales_rep), is_active, created_at, updated_at.
@@ -377,6 +413,16 @@ The current user's profile (name, email, role) is accessible via a clearly visib
 - **SC-008**: All three .gitignore files pass a review confirming no secrets, build artifacts, or dependency directories are committed.
 - **SC-009**: Any list page can be filtered to a single record by searching for a known value in under 2 seconds; the empty state is shown when no records match.
 - **SC-010**: The current user's profile is reachable in ≤2 clicks from any CRM page via the sidebar link.
+- **SC-011**: The login page height on a 1366×768 viewport does not require vertical scrolling (login form fully visible without scroll).
+- **SC-012**: Sidebar collapse transition completes within 200ms (CSS `transition-all duration-200`).
+- **SC-013**: All list pages display skeleton loaders during data fetch; no blank/flash state visible on initial load.
+- **SC-014**: Dashboard KPI cards display correct aggregate values matching the current database state.
+- **SC-015**: Colour contrast ratio ≥4.5:1 verified for primary text against surface backgrounds (brand palette audit).
+- **SC-011**: The login page height on a 1366×768 viewport does not require vertical scrolling (login form fully visible without scroll).
+- **SC-012**: Sidebar collapse transition completes within 200ms (CSS `transition-all duration-200`).
+- **SC-013**: All list pages display skeleton loaders during data fetch; no blank/flash state visible on initial load.
+- **SC-014**: Dashboard KPI cards display correct aggregate values matching the current database state.
+- **SC-015**: Colour contrast ratio ≥4.5:1 verified for primary text against surface backgrounds (brand palette audit).
 
 ## Assumptions
 
@@ -387,8 +433,11 @@ The current user's profile (name, email, role) is accessible via a clearly visib
 - Password hashing uses bcrypt; minimum cost factor 12.
 - The existing `/api/v1/seed` endpoint for CRM data remains unchanged; seed users is a separate operation (new endpoint or new button).
 - The Sales Rep "own leads" restriction is enforced by checking `created_by` field on leads/activities; a `created_by` field will be added to those entities.
-- Mobile/responsive design is out of scope — desktop-first only.
+- Responsive design targets four breakpoints: `sm` (640px, large phone), `md` (768px, tablet), `lg` (1024px, laptop), `xl` (1280px, desktop). All pages are usable at each breakpoint.
 - OAuth2, SAML, or any external identity provider is explicitly out of scope; self-contained JWT auth only.
 - Node 22.17.1 / npm 10.9.2 compatibility is required for all frontend tooling and Docker frontend builds.
 - `python-jose[cryptography]` (or PyJWT) and `bcrypt` (or `passlib[bcrypt]`) will be added as backend dependencies.
 - React Context will be used to hold the in-memory auth token; no third-party auth state library is added.
+- `@fontsource/inter` is the sole new frontend npm package permitted for US16; all other UI work uses Tailwind CSS and existing dependencies.
+- UI modernisation targets WCAG 2.1 AA accessibility compliance for all new and modified components.
+- SaaS CRM design inspiration sources: Zoho CRM, HubSpot CRM, Salesforce Lightning, and Linear.

@@ -2,22 +2,21 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Mail, Building2 } from 'lucide-react'
 import { queryKeys } from '@/queryKeys'
 import { leadsApi } from '@/api/leads'
 import type { LeadCreate, LeadStatus } from '@/types/api'
 import { getNextStates, canConvert } from '@/utils/leadStateMachine'
-import { DetailHeader } from '@/components/layout/DetailHeader'
-import { ProfileSidebar } from '@/components/layout/ProfileSidebar'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { DetailCard, FieldRow } from '@/components/ui/DetailCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { Card } from '@/components/ui/Card'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { SkeletonText } from '@/components/ui/Skeleton'
 import { LeadForm } from './LeadForm'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { formatRelativeDate } from '@/utils/formatters'
 
 export function LeadDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -72,7 +71,12 @@ export function LeadDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   })
 
-  if (isLoading) return <LoadingSpinner className="m-8" />
+  if (isLoading) return (
+    <div className="p-6 space-y-4">
+      <SkeletonText className="h-8 w-56" />
+      <SkeletonText className="h-4 w-40" />
+    </div>
+  )
   if (error) return <ErrorBanner message={(error as Error).message} />
   if (!lead) return null
 
@@ -80,95 +84,62 @@ export function LeadDetailPage() {
   const convertible = canConvert(lead)
   const fullName = `${lead.first_name} ${lead.last_name}`
 
-  const sidebarFields = [
-    { icon: Mail, label: 'Email', value: lead.email, href: `mailto:${lead.email}` },
-    ...(lead.company ? [{ icon: Building2, label: 'Company', value: lead.company }] : []),
-  ]
-
   return (
-    <div>
-      <DetailHeader
-        backTo="/leads"
-        backLabel="Leads"
+    <div className="p-6 space-y-6">
+      <PageHeader
         title={fullName}
-        subtitle={<Badge variant="status" value={lead.status} />}
+        breadcrumb={{ label: 'Leads', to: '/leads' }}
         actions={
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setShowEdit(true)}>
-              Edit
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => confirm.confirm('Delete this lead? This cannot be undone.')}
-            >
-              Delete
-            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setShowEdit(true)}>Edit</Button>
+            <Button variant="destructive" size="sm" onClick={() => confirm.confirm('Delete this lead? This cannot be undone.')}>Delete</Button>
           </div>
         }
       />
 
-      <div className="flex gap-6 p-6">
-        <ProfileSidebar
-          name={fullName}
-          avatarColor="bg-amber-600"
-          fields={sidebarFields}
-        />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
+          <DetailCard title="Lead Information">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              <FieldRow label="Status" value={<Badge variant="status" value={lead.status} />} />
+              <FieldRow label="Company" value={lead.company ?? '—'} />
+              <FieldRow label="Email" value={<a href={`mailto:${lead.email}`} className="text-indigo-600 hover:underline">{lead.email}</a>} />
+              <FieldRow label="Source" value={lead.source ?? '—'} />
+              <FieldRow label="Created" value={formatRelativeDate(lead.created_at)} />
+            </div>
+          </DetailCard>
 
-        <div className="flex-1 min-w-0 space-y-4">
-          <Card>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              Status Transition
-            </h3>
-            {nextStates.length === 0 ? (
-              <p className="text-sm text-gray-400">No further transitions available.</p>
-            ) : (
-              <div className="flex gap-2 flex-wrap">
-                {nextStates.map((s) => (
-                  <Button
-                    key={s}
-                    variant="secondary"
-                    size="sm"
-                    loading={statusMutation.isPending}
-                    onClick={() => statusMutation.mutate(s)}
-                  >
-                    → {s.charAt(0).toUpperCase() + s.slice(1)}
-                  </Button>
-                ))}
+          {(nextStates.length > 0 || convertible || lead.converted_opportunity_id) && (
+            <DetailCard title="Actions">
+              <div className="space-y-4">
+                {nextStates.length > 0 && (
+                  <div>
+                    <p className="text-xs text-slate-500 mb-2">Move to next stage:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {nextStates.map((s) => (
+                        <Button key={s} variant="secondary" size="sm" loading={statusMutation.isPending} onClick={() => statusMutation.mutate(s)}>
+                          → {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {convertible && (
+                  <div>
+                    <p className="text-xs text-slate-500 mb-2">This lead is qualified and ready to convert:</p>
+                    <Button loading={convertMutation.isPending} onClick={() => convertMutation.mutate()}>
+                      Convert to Opportunity
+                    </Button>
+                  </div>
+                )}
+                {lead.converted_opportunity_id && (
+                  <p className="text-sm text-slate-500">
+                    Converted to{' '}
+                    <a href={`/opportunities/${lead.converted_opportunity_id}`} className="text-indigo-600 hover:underline">opportunity</a>.
+                  </p>
+                )}
               </div>
-            )}
-          </Card>
-
-          {convertible && (
-            <Card>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Convert to Opportunity
-              </h3>
-              <p className="text-sm text-gray-500 mb-3">
-                This lead is qualified and ready to be converted to an opportunity.
-              </p>
-              <Button
-                loading={convertMutation.isPending}
-                onClick={() => convertMutation.mutate()}
-              >
-                Convert to Opportunity
-              </Button>
-            </Card>
-          )}
-
-          {lead.converted_opportunity_id && (
-            <Card>
-              <p className="text-sm text-gray-500">
-                Converted to{' '}
-                <a
-                  href={`/opportunities/${lead.converted_opportunity_id}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  opportunity
-                </a>
-                .
-              </p>
-            </Card>
+            </DetailCard>
           )}
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { Inbox } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Button } from './Button'
 
@@ -8,19 +9,20 @@ interface EmptyStateProps {
   icon?: LucideIcon
 }
 
-export function EmptyState({ title, description, action, icon: Icon }: EmptyStateProps) {
+export function EmptyState({ title, description, action, icon: Icon = Inbox }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      {Icon && <Icon className="mb-3 h-10 w-10 text-gray-300" />}
-      <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-      {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
+    <div className="flex flex-col items-center justify-center py-10 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 mb-3">
+        <Icon className="h-6 w-6 text-slate-400" />
+      </div>
+      <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+      {description && <p className="mt-1 text-xs text-slate-500 max-w-xs">{description}</p>}
       {action && (
         <div className="mt-4">
-          <Button onClick={action.onClick} size="sm">
-            {action.label}
-          </Button>
+          <Button onClick={action.onClick} size="sm">{action.label}</Button>
         </div>
       )}
     </div>
   )
 }
+

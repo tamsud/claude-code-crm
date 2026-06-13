@@ -56,18 +56,58 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-indigo-100">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+    <div className="min-h-screen flex">
+      {/* Brand panel — visible on lg+ only */}
+      <div className="hidden lg:flex lg:w-2/5 bg-brand flex-col justify-center p-12">
+        <div className="inline-flex items-center gap-3 mb-10">
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-6 h-6" fill="white">
+              <rect x="2" y="14" width="5" height="7" rx="1" />
+              <rect x="9.5" y="9" width="5" height="12" rx="1" />
+              <rect x="17" y="4" width="5" height="17" rx="1" />
+            </svg>
+          </div>
+          <span className="text-white text-lg font-bold">Sales CRM</span>
+        </div>
+        <h1 className="text-3xl font-semibold text-white leading-snug">
+          Your CRM,<br />simplified.
+        </h1>
+        <p className="mt-4 text-white/70 text-base leading-relaxed">
+          Manage leads, contacts, accounts, and opportunities — all in one place. Built for modern sales teams.
+        </p>
+        <ul className="mt-8 space-y-3 text-white/80 text-sm">
+          <li className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0" />
+            Role-based access for your entire team
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0" />
+            Real-time pipeline and KPI dashboard
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0" />
+            Activity tracking and mock email notifications
+          </li>
+        </ul>
+      </div>
+
+      {/* Form panel */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-surface-base">
+        <div className="w-full max-w-sm">
+          {/* Logo shown on mobile only */}
+          <div className="flex items-center gap-2 mb-8 lg:hidden">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="white">
+                <rect x="2" y="14" width="5" height="7" rx="1" />
+                <rect x="9.5" y="9" width="5" height="12" rx="1" />
+                <rect x="17" y="4" width="5" height="17" rx="1" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">CRM Platform</h1>
-            <p className="text-gray-500 mt-1">Sign in to your account</p>
+            <span className="text-slate-900 font-bold text-base">Sales CRM</span>
           </div>
+
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Sign in</h2>
+          <p className="text-slate-500 text-sm mb-8">Enter your credentials to access your account.</p>
 
           {needsSetup && !setupDone && (
             <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -93,7 +133,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
                 Email address
               </label>
               <input
@@ -103,13 +143,13 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="w-full px-4 py-2.5 border border-surface-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
                 Password
               </label>
               <input
@@ -119,7 +159,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="w-full px-4 py-2.5 border border-surface-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition"
                 placeholder="••••••••"
               />
             </div>
@@ -133,15 +173,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="w-full py-2.5 px-4 bg-brand-accent hover:bg-indigo-600 disabled:opacity-50 text-white font-semibold rounded-lg transition focus:outline-none focus:ring-2 focus:ring-brand-accent focus:ring-offset-2"
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 
           {!needsSetup && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-500 space-y-1">
-              <p className="font-medium text-gray-600">Demo accounts:</p>
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-slate-500 space-y-1">
+              <p className="font-medium text-slate-600">Demo accounts:</p>
               <p>admin@crm.local · manager@crm.local · sales@crm.local</p>
               <p>Password: <span className="font-mono">password123</span></p>
             </div>

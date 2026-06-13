@@ -31,24 +31,24 @@ export function ContactForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             First Name <span className="text-red-500">*</span>
           </label>
           <input
             {...register('first_name', { required: 'Required' })}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           {errors.first_name && (
             <p className="mt-1 text-xs text-red-600">{errors.first_name.message}</p>
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Last Name <span className="text-red-500">*</span>
           </label>
           <input
             {...register('last_name', { required: 'Required' })}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           {errors.last_name && (
             <p className="mt-1 text-xs text-red-600">{errors.last_name.message}</p>
@@ -57,7 +57,7 @@ export function ContactForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-slate-700 mb-1">
           Email <span className="text-red-500">*</span>
         </label>
         <input
@@ -66,7 +66,7 @@ export function ContactForm({
             pattern: { value: /^\S+@\S+$/, message: 'Invalid email' },
           })}
           type="email"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         {errors.email && (
           <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
@@ -74,19 +74,19 @@ export function ContactForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
         <input
           {...register('phone')}
           type="tel"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Account</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Account</label>
         <select
           {...register('account_id')}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">— None —</option>
           {accounts.data?.items.map((a) => (

@@ -2,27 +2,21 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
 import { queryKeys } from '@/queryKeys'
 import { accountsApi } from '@/api/accounts'
 import type { AccountCreate } from '@/types/api'
-import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { SkeletonRow } from '@/components/ui/Skeleton'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
-import { SortFilterBar } from '@/components/ui/SortFilterBar'
+import { TableHead } from '@/components/ui/TableHead'
+import { ListPageTitle } from '@/components/layout/PageHeader'
 import { useSortFilter } from '@/hooks/useSortFilter'
 import { useAuth } from '@/contexts/AuthContext'
 import { AccountForm } from './AccountForm'
 
 const PAGE_SIZE = 20
-const SORT_OPTIONS = [
-  { value: 'created_at', label: 'Date Created' },
-  { value: 'name', label: 'Name' },
-  { value: 'industry', label: 'Industry' },
-  { value: 'updated_at', label: 'Last Updated' },
-]
 
 export function AccountsListPage() {
   const qc = useQueryClient()
@@ -51,70 +45,66 @@ export function AccountsListPage() {
   const canCreate = user?.role === 'admin' || user?.role === 'manager'
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Accounts</h1>
-        {canCreate && (
-          <Button onClick={() => setShowCreate(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> New Account
-          </Button>
-        )}
-      </div>
-
-      <SortFilterBar state={sf} sortOptions={SORT_OPTIONS} placeholder="Search accounts…" />
-
-      {error && (
-        <ErrorBanner
-          message={(error as Error).message}
-          onRetry={() => refetch()}
-        />
-      )}
-
-      {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
-
-      {!isLoading && data && data.items.length === 0 && (
-        <EmptyState
-          title="No accounts found"
-          description={sf.search ? `No accounts matching "${sf.search}"` : 'Create your first account to get started'}
-          action={canCreate ? { label: 'New Account', onClick: () => setShowCreate(true) } : undefined}
-        />
-      )}
-
-      {data && data.items.length > 0 && (
-        <>
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Name</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Industry</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Website</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {data.items.map((a) => (
-                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-indigo-600">
-                      <Link to={`/accounts/${a.id}`}>{a.name}</Link>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{a.industry ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {a.website ? (
-                        <a href={a.website} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">
-                          {a.website}
-                        </a>
-                      ) : '—'}
+    <div className="p-4 space-y-3">
+      <ListPageTitle title="Accounts" />
+      {error && <ErrorBanner message={(error as Error).message} onRetry={() => refetch()} />}
+      <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+        {isLoading ? (
+          <div className="p-4"><SkeletonRow count={5} /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <TableHead
+                columns={[
+                  { label: 'Name', field: 'name' },
+                  { label: 'Industry', field: 'industry' },
+                  { label: 'Website', field: 'website', noSort: true },
+                ]}
+                sf={sf}
+                setPage={setPage}
+                search={sf.search}
+                onSearch={(v) => { sf.setSearch(v); setPage(1) }}
+                searchPlaceholder="Search accounts..."
+                onAdd={canCreate ? () => setShowCreate(true) : undefined}
+                addLabel="New Account"
+              />
+              <tbody className="divide-y divide-slate-100">
+                {data?.items.length === 0 ? (
+                  <tr>
+                    <td colSpan={4}>
+                      <EmptyState
+                        title="No accounts found"
+                        description={sf.search ? `No accounts matching "${sf.search}"` : 'Create your first account to get started'}
+                        action={canCreate ? { label: 'New Account', onClick: () => setShowCreate(true) } : undefined}
+                      />
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  data?.items.map((a) => (
+                    <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-indigo-600">
+                        <Link to={`/accounts/${a.id}`}>{a.name}</Link>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{a.industry ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {a.website ? (
+                          <a href={a.website} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">
+                            {a.website}
+                          </a>
+                        ) : '—'}
+                      </td>
+                      <td />
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-
-          <Pagination page={page} size={PAGE_SIZE} total={data.total} onPageChange={setPage} />
-        </>
+        )}
+      </div>
+      {data && data.total != null && data.total > PAGE_SIZE && (
+        <Pagination page={page} size={PAGE_SIZE} total={data.total} onPageChange={setPage} />
       )}
-
       <Modal open={showCreate} onOpenChange={setShowCreate} title="New Account">
         <AccountForm
           onSubmit={(body) => createMutation.mutate(body)}

@@ -24,19 +24,19 @@ export function EmailDetailPage() {
     <div className="p-6 max-w-3xl">
       <Link
         to="/admin/mock-email"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6"
       >
         <ArrowLeft className="h-4 w-4" /> Inbox
       </Link>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-        <h1 className="text-xl font-bold text-gray-900">{email.subject}</h1>
-        <div className="space-y-1 text-sm text-gray-500">
-          <p><span className="font-medium text-gray-700">From:</span> {email.from_email}</p>
-          <p><span className="font-medium text-gray-700">To:</span> {email.to_email}</p>
-          <p><span className="font-medium text-gray-700">Sent:</span> {formatDate(email.sent_at)}</p>
+      <div className="rounded-lg border border-slate-100 bg-white p-6 space-y-4">
+        <h1 className="text-xl font-bold text-slate-900">{email.subject}</h1>
+        <div className="space-y-1 text-sm text-slate-500">
+          <p><span className="font-medium text-slate-700">From:</span> {email.from_email}</p>
+          <p><span className="font-medium text-slate-700">To:</span> {email.to_email}</p>
+          <p><span className="font-medium text-slate-700">Sent:</span> {formatDate(email.sent_at)}</p>
         </div>
-        <hr className="border-gray-200" />
+        <hr className="border-slate-100" />
         <div className="text-sm text-gray-800 whitespace-pre-wrap">
           {email.body ?? email.html_body ?? '(no content)'}
         </div>

@@ -337,3 +337,73 @@ git status --short
 git check-ignore -v frontend/node_modules frontend/.env backend/__pycache__ backend/.venv
 # Expected: all matched by respective .gitignore files
 ```
+
+---
+
+## Scenario 11: UI/UX Modernisation (US16)
+
+### 11a. Login page responsive layout
+
+1. Open http://localhost:5173/login in a browser set to 1366×768 viewport
+2. Expected: two-panel layout — brand panel (indigo/navy) on the left, login form on the right
+3. Expected: entire form is visible without vertical scrolling
+4. Resize browser to 768px width
+5. Expected: brand panel disappears, single-column form centred on white background
+
+### 11b. Sidebar collapse
+
+1. Log in and navigate to the Dashboard
+2. Click the chevron toggle button at the right edge of the sidebar
+3. Expected: sidebar collapses to icon-only width (~64px) within 200ms smooth transition
+4. Expected: text labels are hidden; icon tooltips appear on hover
+5. Reload the page
+6. Expected: sidebar remains collapsed (state persisted in localStorage)
+7. Verify in DevTools → Application → Local Storage → `crm-sidebar-collapsed` = `"1"`
+8. Click the chevron again → sidebar expands back to full width
+
+### 11c. Mobile sidebar drawer
+
+1. Open the app in a browser resized to 375px width (or Chrome DevTools mobile emulation)
+2. Expected: sidebar is hidden; a hamburger menu button is visible in the top navigation bar
+3. Click the hamburger button
+4. Expected: sidebar slides in from the left as a drawer overlay
+5. Click outside the drawer or press Escape
+6. Expected: drawer closes
+
+### 11d. Skeleton loaders on list pages
+
+1. Navigate to the Accounts list page (http://localhost:5173/accounts)
+2. If using Chrome DevTools, throttle the network to "Slow 3G" before navigating
+3. Expected: during the data fetch, animated skeleton rows are displayed (pulsing grey bars)
+4. Expected: once data loads, skeleton rows are replaced by actual account rows
+
+### 11e. Dashboard KPI cards
+
+1. Seed demo data: `curl -X POST http://localhost:8000/api/v1/seed/ -H "Authorization: Bearer $TOKEN"`
+2. Navigate to the Dashboard (http://localhost:5173/)
+3. Expected: four KPI cards are visible at the top:
+   - "Total Leads" — non-zero number
+   - "Open Opp. Value" — dollar value from open opportunities
+   - "Active Accounts" — non-zero number
+   - "Activities Due Today" — number (may be 0)
+4. Expected: KPI card values match the seeded data (run quick count checks via API)
+5. Expected: skeleton cards show briefly while data loads, then replaced by real values
+
+### 11f. Typography (Inter font)
+
+1. Open the app and inspect any text element in Chrome DevTools → Computed styles
+2. Expected: `font-family` shows `Inter` as the first font in the stack
+
+### 11g. Focus ring accessibility (WCAG 2.1 AA)
+
+1. Open the login page
+2. Press Tab to cycle through interactive elements
+3. Expected: each focused element (email input, password input, Sign In button) shows a visible indigo focus ring
+4. On the Dashboard, Tab through the nav links
+5. Expected: each focused nav link shows a visible focus ring
+
+### 11h. Design token verification
+
+1. Run: `cd frontend && npx tailwindcss --content "./src/**/*.tsx" --output /tmp/out.css 2>&1`
+   (Or check `tailwind.config.ts` directly)
+2. Expected: `tailwind.config.ts` contains `colors.brand`, `colors.surface`, `borderRadius.card`, `boxShadow.card`, `boxShadow.dropdown` extensions

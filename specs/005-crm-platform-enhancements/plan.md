@@ -8,7 +8,7 @@
 
 ## Summary
 
-Extend the existing Sales CRM (React 18 frontend + FastAPI backend) with JWT authentication, three-tier RBAC (Admin/Manager/Sales Rep), user management, mock email notification on lead create, Docker containerisation with persistent SQLite volume, database clear endpoint, UI visual improvements (brand colours + logo + badge colours), comprehensive .gitignore files, three README files, CRM demo walkthrough guide, and E2E test guide. All changes are additive to the existing codebase — no existing API contracts or frontend routes are broken.
+Extend the existing Sales CRM (React 18 frontend + FastAPI backend) with JWT authentication, three-tier RBAC (Admin/Manager/Sales Rep), user management, mock email notification on lead create, Docker containerisation with persistent SQLite volume, database clear endpoint, full UI/UX modernisation (responsive design, collapsible sidebar, login redesign, skeleton loaders, KPI dashboard, design tokens, WCAG 2.1 AA), comprehensive .gitignore files, three README files, CRM demo walkthrough guide, and E2E test guide. All changes are additive — no existing API contracts or frontend routes are broken.
 
 ---
 
@@ -20,7 +20,8 @@ Extend the existing Sales CRM (React 18 frontend + FastAPI backend) with JWT aut
 - `python-jose[cryptography]>=3.3.0` — JWT signing and verification (HS256)
 - `passlib[bcrypt]>=1.7.4` — bcrypt password hashing (cost factor 12)
 
-**New Frontend Dependencies**: None — Auth state via React Context + useRef (no new npm packages)
+**New Frontend Dependencies**:
+- `@fontsource/inter` — Inter typeface (400 + 600 weights), loaded locally (no CDN). Sole exception to no-new-packages rule; justified by enterprise-grade typography requirement (FR-053).
 
 **Storage**: SQLite (existing, via aiosqlite). Named Docker volume `crm_db_data` mounted at `/app/data/crm.db` for container persistence.
 
@@ -29,7 +30,7 @@ Extend the existing Sales CRM (React 18 frontend + FastAPI backend) with JWT aut
 - Frontend: Vitest (existing) — no new unit tests required
 - E2E: Playwright (existing) — documented in e2e-demo-guide.md
 
-**Target Platform**: Desktop browsers Chrome/Firefox/Edge 120+ (existing) + Docker (new)
+**Target Platform**: Chrome/Firefox/Edge 120+ at `sm` (640px) through `xl` (1280px) breakpoints + Docker (new). Primary viewport: 1366×768 laptop.
 
 **Performance Goals**: Login endpoint ≤500ms p95. JWT verification overhead ≤5ms per request.
 
@@ -37,11 +38,11 @@ Extend the existing Sales CRM (React 18 frontend + FastAPI backend) with JWT aut
 - `JWT_SECRET_KEY` env variable required in production (min 32 chars)
 - `JWT_EXPIRE_MINUTES` env variable (default: 60)
 - No breaking changes to existing API endpoints
-- No new frontend npm packages
+- Only `@fontsource/inter` permitted as a new frontend npm package (FR-053); all other UI work uses Tailwind + existing dependencies
 - Node 22.17.1 / npm 10.9.2 compatibility in Docker frontend build
 - SQLite file path in Docker: `/app/data/crm.db`
 
-**Scale/Scope**: 2 Alembic migrations, 1 new model (User), 4 new backend routers, ~15 new frontend files, 3 Docker files, 3 READMEs, 3 .gitignore files, 2 documentation guides, sort/filter on all 6 list endpoints + list pages
+**Scale/Scope**: 2 Alembic migrations, 1 new model (User), 4 new backend routers, ~25 new/modified frontend files, 3 Docker files, 3 READMEs, 3 .gitignore files, 2 documentation guides, sort/filter on all 6 list endpoints + list pages, full responsive UI/UX redesign (US16)
 
 ---
 
@@ -64,6 +65,9 @@ Extend the existing Sales CRM (React 18 frontend + FastAPI backend) with JWT aut
 | sort_by whitelist prevents injection | PASS | Dict-mapped column whitelist per entity; invalid value → fallback |
 | Search uses parameterised queries (no string interpolation) | PASS | SQLAlchemy `ilike` binds values safely |
 | Profile page self-service PATCH cannot escalate role | PASS | /api/v1/users/me only allows display_name update |
+| Sidebar collapsed state stored only for UX (not auth) | PASS | FR-048; `localStorage` key `crm-sidebar-collapsed` is UX pref, not security-sensitive |
+| Inter font loaded locally (no CDN) | PASS | FR-053; `@fontsource/inter` bundled in Vite build, no external network request at runtime |
+| Responsive breakpoints do not introduce new security concerns | PASS | CSS/Tailwind only; no server-side rendering or new endpoints |
 
 ---
 
@@ -188,13 +192,35 @@ frontend/
 │   │   └── ProtectedRoute.tsx            # NEW: redirects unauthenticated users to /login
 │   └── App.tsx                           # MODIFIED: wrap RouterProvider with AuthProvider
 
+# US16 FRONTEND ADDITIONS (UI/UX Modernisation)
+frontend/
+├── package.json                          # MODIFIED: + @fontsource/inter
+├── tailwind.config.ts                    # MODIFIED: + brand/surface tokens, card radius/shadow, dropdown shadow
+├── src/
+│   ├── style.css                         # MODIFIED: + @fontsource/inter/400.css, /600.css imports; base layer focus-visible ring
+│   ├── components/
+│   │   ├── ui/
+│   │   │   ├── Skeleton.tsx              # NEW: SkeletonCard, SkeletonRow, SkeletonText (animate-pulse)
+│   │   │   └── KpiCard.tsx               # NEW: stat card (label, value, trend indicator, icon slot)
+│   │   └── layout/
+│   │       ├── NavSidebar.tsx            # MODIFIED: + collapsed state, chevron toggle, transition-all, tooltip, mobile drawer
+│   │       └── TopBar.tsx                # NEW (or MODIFIED): hamburger button on <md; breadcrumb slot
+│   ├── features/
+│   │   ├── auth/
+│   │   │   └── LoginPage.tsx             # MODIFIED: two-panel responsive layout (brand left / form right on lg+)
+│   │   └── dashboard/
+│   │       ├── DashboardPage.tsx         # MODIFIED: + KPI card row, RecentActivityFeed
+│   │       └── RecentActivityFeed.tsx    # NEW: last 5 activities from existing /activities API
+│   ├── hooks/
+│   │   └── useMediaQuery.ts              # NEW: `useMediaQuery('(max-width: 768px)')` for drawer logic
+
 # DOCUMENTATION
 docs/
 ├── demo-guide.md                         # NEW: 8-stage CRM walkthrough
 └── e2e-demo-guide.md                     # NEW: Playwright test guide + 3 worked examples
 ```
 
-**Structure Decision**: Additive web application (Option 2 equivalent). Backend auth logic lives in `backend/app/auth/` module. Frontend auth lives in `frontend/src/contexts/` + `frontend/src/features/auth/`. Docker files in their respective project directories. Documentation in `docs/` at project root.
+**Structure Decision**: Additive web application (Option 2 equivalent). Backend auth logic lives in `backend/app/auth/` module. Frontend auth lives in `frontend/src/contexts/` + `frontend/src/features/auth/`. UI/UX modernisation is entirely frontend (no new backend routes). Docker files in their respective project directories. Documentation in `docs/` at project root.
 
 ---
 

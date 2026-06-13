@@ -281,3 +281,161 @@ Each list page shows an `<EmptyState>` (already exists) with a "Clear filters" C
 // useCurrentUser() — GET /api/v1/users/me (for ProfilePage)
 // useUpdateCurrentUser() — PATCH /api/v1/users/me (for ProfilePage save)
 ```
+
+---
+
+## New: Skeleton (US16)
+
+```typescript
+// src/components/ui/Skeleton.tsx
+// Exports three named components, all using Tailwind animate-pulse:
+
+interface SkeletonProps { count?: number; className?: string }
+
+// SkeletonRow — mimics a table/list row (horizontal bar with label + value placeholders)
+export function SkeletonRow({ count = 5, className }: SkeletonProps): JSX.Element
+
+// SkeletonCard — mimics a KPI card (square/rect with title + value placeholder)
+export function SkeletonCard({ count = 4, className }: SkeletonProps): JSX.Element
+
+// SkeletonText — single inline text line placeholder (for headings, labels)
+export function SkeletonText({ className }: SkeletonProps): JSX.Element
+
+// Usage pattern:
+{isLoading && <SkeletonRow count={5} />}
+{!isLoading && data && <DataTable rows={data.items} />}
+```
+
+---
+
+## New: KpiCard (US16)
+
+```typescript
+// src/components/ui/KpiCard.tsx
+interface KpiCardProps {
+  label: string                    // e.g. "Total Leads"
+  value: string | number           // e.g. 42
+  trend?: {
+    direction: 'up' | 'down'
+    percent: number                // e.g. 12 → "+12%"
+  }
+  icon?: React.ReactNode           // lucide-react icon
+  loading?: boolean                // shows SkeletonCard when true
+  error?: boolean                  // shows "--" when true
+}
+// Card styling: bg-white shadow-card rounded-card p-6
+// Value: text-2xl font-semibold text-slate-900
+// Label: text-sm text-slate-500
+// Trend up: text-green-600 ▲, trend down: text-red-500 ▼
+```
+
+---
+
+## New: NavSidebar Collapsible Contract (US16)
+
+```typescript
+// src/components/layout/NavSidebar.tsx
+// Additional props/state beyond existing component:
+
+// Collapsed state (read from localStorage on mount):
+const [collapsed, setCollapsed] = useState<boolean>(
+  () => localStorage.getItem('crm-sidebar-collapsed') === '1'
+)
+
+// Width transitions:
+// expanded:  w-60 (240px)  — icon + text label visible
+// collapsed: w-16 (64px)   — icon only; Tooltip shows label on hover
+// Transition: transition-all duration-200
+
+// Mobile drawer (useMediaQuery('(max-width: 768px)')):
+// fixed inset-y-0 left-0 z-50 translate-x-0 | -translate-x-full
+// Backdrop: fixed inset-0 bg-surface-overlay z-40
+
+// Chevron toggle button:
+// position: absolute right-0 top-4 translate-x-1/2
+// icon: ChevronLeft (expanded) | ChevronRight (collapsed) from lucide-react
+```
+
+---
+
+## New: LoginPage Responsive Layout (US16)
+
+```typescript
+// src/features/auth/LoginPage.tsx
+// Layout structure:
+//
+// <div class="min-h-screen flex">
+//   <!-- Brand Panel — hidden on < lg -->
+//   <div class="hidden lg:flex lg:w-2/5 bg-brand flex-col justify-center p-12">
+//     <Logo />
+//     <h1 class="text-white text-3xl font-semibold mt-8">Your CRM, simplified.</h1>
+//     <p class="text-white/70 mt-4 text-base">Manage leads, contacts, and opportunities...</p>
+//   </div>
+//   <!-- Form Panel -->
+//   <div class="flex-1 flex items-center justify-center p-8 bg-surface-base">
+//     <div class="w-full max-w-sm">
+//       <Logo class="lg:hidden mb-8" />  <!-- logo visible on mobile only -->
+//       <h2>Sign in to your account</h2>
+//       <form ...>
+//         <input name="email" ... />
+//         <input name="password" ... />
+//         <Button type="submit" loading={isSubmitting}>Sign in</Button>
+//       </form>
+//     </div>
+//   </div>
+// </div>
+
+// Acceptance: entire form div fits within 1366×768 viewport height (no vertical scroll)
+```
+
+---
+
+## New: useMediaQuery hook (US16)
+
+```typescript
+// src/hooks/useMediaQuery.ts
+// Returns true when the media query matches:
+function useMediaQuery(query: string): boolean
+// Usage:
+const isMobile = useMediaQuery('(max-width: 768px)')
+// Used by NavSidebar to toggle between drawer (mobile) and collapsible panel (desktop)
+```
+
+---
+
+## New: RecentActivityFeed (US16)
+
+```typescript
+// src/features/dashboard/RecentActivityFeed.tsx
+// Props: none (self-contained)
+// Fetches last 5 activities from existing GET /api/v1/activities/?sort_by=created_at&sort_dir=desc&page=1&size=5
+// Renders a compact list: activity type badge | subject | contact name | relative timestamp
+// Loading state: <SkeletonRow count={5} />
+// Error state: subtle "Unable to load recent activity" message
+```
+
+---
+
+## Modified: DashboardPage (US16)
+
+```typescript
+// src/features/dashboard/DashboardPage.tsx
+// Layout:
+//
+// <main>
+//   <!-- KPI Row: responsive grid -->
+//   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+//     <KpiCard label="Total Leads" value={leadsTotal} icon={<Users />} loading={leadsLoading} />
+//     <KpiCard label="Open Opp. Value" value={`$${openOppValue}`} icon={<DollarSign />} loading={oppsLoading} />
+//     <KpiCard label="Active Accounts" value={accountsTotal} icon={<Building2 />} loading={accsLoading} />
+//     <KpiCard label="Activities Due Today" value={dueTodayCount} icon={<Calendar />} loading={activitiesLoading} />
+//   </div>
+//   <!-- Existing pipeline funnel (recoloured by T084) -->
+//   <PipelineFunnel />
+//   <!-- New: Recent activity feed -->
+//   <RecentActivityFeed />
+// </main>
+//
+// Data sources: existing React Query hooks — useLeads, useOpportunities, useAccounts, useActivities
+// No new backend endpoints required
+```

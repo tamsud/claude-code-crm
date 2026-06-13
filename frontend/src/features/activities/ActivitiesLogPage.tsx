@@ -1,34 +1,27 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
 import { queryKeys } from '@/queryKeys'
 import { activitiesApi } from '@/api/activities'
 import type { ActivityCreate, ActivityType } from '@/types/api'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
-import { SortFilterBar } from '@/components/ui/SortFilterBar'
+import { SkeletonRow } from '@/components/ui/Skeleton'
+import { TableHead } from '@/components/ui/TableHead'
+import { ListPageTitle } from '@/components/layout/PageHeader'
 import { useSortFilter } from '@/hooks/useSortFilter'
 import { ActivityLogForm } from './ActivityLogForm'
 import { formatDate } from '@/utils/formatters'
 
 const PAGE_SIZE = 20
-const TYPE_TABS: { key: ActivityType | 'all'; label: string }[] = [
+const TYPE_TABS = [
   { key: 'all', label: 'All' },
   { key: 'call', label: 'Calls' },
   { key: 'email', label: 'Emails' },
   { key: 'meeting', label: 'Meetings' },
-]
-
-const SORT_OPTIONS = [
-  { value: 'activity_date', label: 'Activity Date' },
-  { value: 'subject', label: 'Subject' },
-  { value: 'type', label: 'Type' },
-  { value: 'created_at', label: 'Date Logged' },
 ]
 
 export function ActivitiesLogPage() {
@@ -61,63 +54,61 @@ export function ActivitiesLogPage() {
   })
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Activities</h1>
-        <Button onClick={() => setShowCreate(true)} size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Log Activity
-        </Button>
-      </div>
-
-      <div className="flex gap-1 border-b border-gray-200">
-        {TYPE_TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => { setTypeFilter(t.key); setPage(1) }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              typeFilter === t.key
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <SortFilterBar state={sf} sortOptions={SORT_OPTIONS} placeholder="Search activities…" />
-
+    <div className="p-4 space-y-3">
+      <ListPageTitle title="Activities" />
       {error && <ErrorBanner message={(error as Error).message} onRetry={() => refetch()} />}
-      {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
-      {!isLoading && data?.items.length === 0 && (
-        <EmptyState title="No activities found" description={sf.search ? `No activities matching "${sf.search}"` : 'Log your first activity'} />
-      )}
-
-      {data && data.items.length > 0 && (
-        <>
-          <div className="space-y-2">
-            {data.items.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-indigo-200 transition-colors"
-              >
-                <Badge variant="activity" value={a.type} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{a.subject}</p>
-                  {a.notes && (
-                    <p className="text-xs text-gray-500 mt-1 truncate">{a.notes}</p>
-                  )}
-                </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  {formatDate(a.activity_date)}
-                </span>
-              </div>
-            ))}
+      <div className="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+        {isLoading ? (
+          <div className="p-4"><SkeletonRow count={5} /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <TableHead
+                columns={[
+                  { label: 'Type', field: 'type', noSort: true },
+                  { label: 'Subject', field: 'subject' },
+                  { label: 'Notes', field: 'notes', noSort: true },
+                  { label: 'Date', field: 'activity_date' },
+                ]}
+                sf={sf}
+                setPage={setPage}
+                search={sf.search}
+                onSearch={(v) => { sf.setSearch(v); setPage(1) }}
+                searchPlaceholder="Search activities..."
+                onAdd={() => setShowCreate(true)}
+                addLabel="Log Activity"
+                tabs={TYPE_TABS}
+                activeTab={typeFilter}
+                onTabChange={(k) => setTypeFilter(k as ActivityType | 'all')}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {data?.items.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <EmptyState title="No activities found" description={sf.search ? `No activities matching "${sf.search}"` : 'Log your first activity'} />
+                    </td>
+                  </tr>
+                ) : (
+                  data?.items.map((a) => (
+                    <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3"><Badge variant="activity" value={a.type} /></td>
+                      <td className="px-4 py-3 font-medium text-slate-900">{a.subject}</td>
+                      <td className="px-4 py-3 text-slate-500 max-w-xs">
+                        <span className="truncate block">{a.notes ?? '—'}</span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDate(a.activity_date)}</td>
+                      <td />
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-          <Pagination page={page} size={PAGE_SIZE} total={data.total} onPageChange={setPage} />
-        </>
+        )}
+      </div>
+      {data && data.total != null && data.total > PAGE_SIZE && (
+        <Pagination page={page} size={PAGE_SIZE} total={data.total} onPageChange={setPage} />
       )}
-
       <Modal open={showCreate} onOpenChange={setShowCreate} title="Log Activity">
         <ActivityLogForm
           onSubmit={(body) => createMutation.mutate(body)}

@@ -4,14 +4,16 @@ interface CardProps {
   children: React.ReactNode
   className?: string
   onClick?: () => void
+  noPadding?: boolean
 }
 
-export function Card({ children, className, onClick }: CardProps) {
+export function Card({ children, className, onClick, noPadding }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 bg-white p-4 shadow-sm',
-        onClick && 'cursor-pointer hover:shadow-md transition-shadow',
+        'rounded-xl border border-slate-100 bg-white shadow-card',
+        !noPadding && 'p-4',
+        onClick && 'cursor-pointer hover:shadow-card-md transition-shadow duration-150',
         className
       )}
       onClick={onClick}
@@ -20,3 +22,4 @@ export function Card({ children, className, onClick }: CardProps) {
     </div>
   )
 }
+

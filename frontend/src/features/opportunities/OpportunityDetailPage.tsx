@@ -2,19 +2,17 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { DollarSign, Percent, Calendar } from 'lucide-react'
 import { queryKeys } from '@/queryKeys'
 import { opportunitiesApi } from '@/api/opportunities'
 import { activitiesApi } from '@/api/activities'
 import type { OpportunityCreate, OpportunityStage, ActivityCreate } from '@/types/api'
-import { DetailHeader } from '@/components/layout/DetailHeader'
-import { ProfileSidebar } from '@/components/layout/ProfileSidebar'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { DetailCard, FieldRow } from '@/components/ui/DetailCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { SkeletonText } from '@/components/ui/Skeleton'
 import { OpportunityForm } from './OpportunityForm'
 import { ActivityLogForm } from '@/features/activities/ActivityLogForm'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
@@ -86,51 +84,40 @@ export function OpportunityDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   })
 
-  if (isLoading) return <LoadingSpinner className="m-8" />
+  if (isLoading) return (
+    <div className="p-6 space-y-4">
+      <SkeletonText className="h-8 w-56" />
+      <SkeletonText className="h-4 w-40" />
+    </div>
+  )
   if (error) return <ErrorBanner message={(error as Error).message} />
   if (!opp) return null
 
-  const sidebarFields = [
-    { icon: DollarSign, label: 'Value', value: formatCurrency(opp.value ?? 0) },
-    { icon: Percent, label: 'Probability', value: `${opp.probability ?? 0}%` },
-    ...(opp.expected_close_date
-      ? [{ icon: Calendar, label: 'Close Date', value: formatDate(opp.expected_close_date) }]
-      : []),
-  ]
-
   return (
-    <div>
-      <DetailHeader
-        backTo="/opportunities"
-        backLabel="Pipeline"
+    <div className="p-6 space-y-6">
+      <PageHeader
         title={opp.title}
-        subtitle={<Badge variant="stage" value={opp.stage} />}
+        breadcrumb={{ label: 'Pipeline', to: '/opportunities' }}
         actions={
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setShowEdit(true)}>
-              Edit
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => confirm.confirm('Delete this opportunity? This cannot be undone.')}
-            >
-              Delete
-            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setShowEdit(true)}>Edit</Button>
+            <Button variant="destructive" size="sm" onClick={() => confirm.confirm('Delete this opportunity? This cannot be undone.')}>Delete</Button>
           </div>
         }
       />
 
-      <div className="flex gap-6 p-6">
-        <ProfileSidebar
-          name={opp.title}
-          avatarColor="bg-violet-600"
-          fields={sidebarFields}
-        />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
+          <DetailCard title="Opportunity Details">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              <FieldRow label="Stage" value={<Badge variant="stage" value={opp.stage} />} />
+              <FieldRow label="Value" value={formatCurrency(opp.value ?? 0)} />
+              <FieldRow label="Probability" value={`${opp.probability ?? 0}%`} />
+              <FieldRow label="Expected Close" value={opp.expected_close_date ? formatDate(opp.expected_close_date) : '—'} />
+            </div>
+          </DetailCard>
 
-        <div className="flex-1 min-w-0 space-y-4">
-          <Card>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Update Stage</h3>
+          <DetailCard title="Update Stage">
             <div className="flex flex-wrap gap-2">
               {STAGES.map((s) => (
                 <button
@@ -139,43 +126,40 @@ export function OpportunityDetailPage() {
                   disabled={s === opp.stage || stageMutation.isPending}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     s === opp.stage
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400 hover:text-indigo-600'
                   }`}
                 >
                   {s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' ')}
                 </button>
               ))}
             </div>
-          </Card>
+          </DetailCard>
+        </div>
 
-          <Card>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">Activities</h3>
-              <Button size="sm" variant="secondary" onClick={() => setShowLogActivity(true)}>
-                Log Activity
-              </Button>
-            </div>
-            {activities.isLoading && <LoadingSpinner />}
-            {activities.data?.items.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0"
-              >
-                <Badge variant="activity" value={a.type} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{a.subject}</p>
-                  {a.notes && <p className="text-xs text-gray-500">{a.notes}</p>}
+        <div className="space-y-6">
+          <DetailCard
+            title="Activities"
+            actions={<Button size="sm" variant="secondary" onClick={() => setShowLogActivity(true)}>Log Activity</Button>}
+          >
+            <div className="space-y-3">
+              {activities.data?.items.map((a) => (
+                <div key={a.id} className="flex items-start gap-3 py-2 border-b border-slate-100 last:border-0">
+                  <Badge variant="activity" value={a.type} />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">{a.subject}</p>
+                    {a.notes && <p className="text-xs text-slate-500">{a.notes}</p>}
+                  </div>
+                  <span className="text-xs text-slate-400 whitespace-nowrap">
+                    {a.activity_date ? formatRelativeDate(a.activity_date) : '—'}
+                  </span>
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  {a.activity_date ? formatRelativeDate(a.activity_date) : '—'}
-                </span>
-              </div>
-            ))}
-            {activities.data?.items.length === 0 && (
-              <p className="text-sm text-gray-400">No activities logged yet.</p>
-            )}
-          </Card>
+              ))}
+              {activities.data?.items.length === 0 && (
+                <p className="text-sm text-slate-400">No activities logged yet.</p>
+              )}
+            </div>
+          </DetailCard>
         </div>
       </div>
 

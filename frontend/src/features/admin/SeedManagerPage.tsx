@@ -9,8 +9,11 @@ import { Card } from '@/components/ui/Card'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { queryKeys } from '@/queryKeys'
+import { usePageTitle } from '@/hooks/usePageTitle'
+import { ListPageTitle } from '@/components/layout/PageHeader'
 
 export function SeedManagerPage() {
+  usePageTitle('Seed Manager')
   const qc = useQueryClient()
   const [result, setResult] = useState<SeedResult | null>(null)
   const confirm = useConfirmDialog()
@@ -46,12 +49,12 @@ export function SeedManagerPage() {
   const isLoading = seedMutation.isPending || clearMutation.isPending
 
   return (
-    <div className="p-6 space-y-6 max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900">Seed Manager</h1>
+    <div className="p-4 space-y-3 max-w-xl">
+      <ListPageTitle title="Seed Manager" />
 
       <Card>
-        <h2 className="text-base font-semibold text-gray-900 mb-2">Seed Demo Data</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <h2 className="text-base font-semibold text-slate-900 mb-2">Seed Demo Data</h2>
+        <p className="text-sm text-slate-500 mb-4">
           Populate the database with sample accounts, contacts, leads, opportunities, and
           activities for demonstration purposes.
         </p>
@@ -65,8 +68,8 @@ export function SeedManagerPage() {
       </Card>
 
       <Card>
-        <h2 className="text-base font-semibold text-gray-900 mb-2">Clear All Data</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <h2 className="text-base font-semibold text-slate-900 mb-2">Clear All Data</h2>
+        <p className="text-sm text-slate-500 mb-4">
           Permanently delete all records from the database. This action cannot be undone.
         </p>
         <Button
@@ -81,12 +84,12 @@ export function SeedManagerPage() {
 
       {result && (
         <Card>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Seed Results</h2>
+          <h2 className="text-base font-semibold text-slate-900 mb-3">Seed Results</h2>
           <dl className="space-y-1 text-sm">
             {Object.entries(result).map(([key, count]) => (
               <div key={key} className="flex justify-between">
-                <dt className="capitalize text-gray-600">{key.replace(/_/g, ' ')}</dt>
-                <dd className="font-medium text-gray-900">{count}</dd>
+                <dt className="capitalize text-slate-600">{key.replace(/_/g, ' ')}</dt>
+                <dd className="font-medium text-slate-900">{count}</dd>
               </div>
             ))}
           </dl>

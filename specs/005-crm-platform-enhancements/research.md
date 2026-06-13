@@ -197,3 +197,105 @@
 - Profile as a main nav link (e.g., "Profile" alongside "Dashboard") — wastes nav space for something accessed rarely.
 
 **Outcome**: `NavSidebar` bottom user card → `/profile`. `ProfilePage` with inline display_name edit. New `PATCH /api/v1/users/me` endpoint.
+
+---
+
+## Decision 16: Responsive Design Strategy (US16)
+
+**Decision**: Tailwind CSS responsive utilities (`sm:`, `md:`, `lg:`, `xl:` prefixes) applied directly in component JSX. Breakpoints: `sm=640px` (large phone), `md=768px` (tablet), `lg=1024px` (laptop), `xl=1280px` (desktop). Layout uses CSS Grid for page-level structures and Flexbox for component-level arrangements. No new npm packages — standard Tailwind config is sufficient.
+
+**Rationale**: Tailwind's responsive prefix system (`md:grid-cols-2`, `lg:flex`) is the lowest-friction way to add responsiveness to an existing Vite/React project. No additional CSS framework or layout library needed. The plan constraint "No new frontend npm packages" is maintained.
+
+**Alternatives considered**:
+- CSS custom media queries with `@apply` — verbose, loses JIT benefits.
+- `react-responsive` package — adds a dependency and JS-based breakpoints that flash on SSR (not applicable here but bad habit).
+- CSS Grid named areas — too rigid for a CRM where content varies.
+
+**Outcome**: All page layouts use Tailwind responsive utilities. Sidebar collapses to icon-only at `<lg`. Login page uses two-panel layout on `lg+`, single-column centred card on `<lg`.
+
+---
+
+## Decision 17: Login Page Layout (US16)
+
+**Decision**: Two-panel layout on `lg+` screens (left panel = brand/hero ~40% width with indigo gradient + tagline, right panel = login form ~60% width). On `md` and below: single-column centred card (max-width 420px, full-height vertically centred). Logo appears in both layouts. Form uses `react-hook-form` (already in use for existing forms in codebase).
+
+**Rationale**: Two-panel login pages are the modern SaaS standard (HubSpot, Zoho, Freshdesk). The brand panel communicates product identity even before login. On small screens, the full-screen card is the cleanest UX — no panel clutter. No new libraries needed.
+
+**Alternatives considered**:
+- Fullscreen background image — requires external image asset; no asset pipeline defined.
+- Single card on all sizes — simpler but not modern enough for the stated goal.
+
+**Outcome**: `LoginPage.tsx` redesigned with responsive two-panel layout. Brand panel reuses `indigo-900` brand colour. Left panel hidden on `<lg`.
+
+---
+
+## Decision 18: Sidebar Collapsible Behaviour (US16)
+
+**Decision**: Sidebar has two states: `expanded` (240px wide, icon + text labels) and `collapsed` (64px wide, icons only with Tooltip on hover). Toggle trigger is a chevron button at the top-right edge of the sidebar. Collapsed state is persisted in `localStorage` key `crm-sidebar-collapsed` so it survives page reloads. On `<md` screens the sidebar becomes a slide-in drawer triggered by a hamburger button in the top bar.
+
+**Rationale**: Icon-only collapse is the CRM industry standard (Salesforce, Zoho). It maximises content area on laptop screens (1366×768 is the most common) without hiding nav entirely. Persistence in localStorage for sidebar state (not auth token) is safe and improves UX.
+
+**Alternatives considered**:
+- Hide sidebar entirely on collapse — loses discoverability.
+- CSS `transition: width` only — no `localStorage` persistence; sidebar resets on every page load.
+- Drawer on desktop — not appropriate for primary navigation.
+
+**Outcome**: `NavSidebar.tsx` gains `collapsed` state, chevron toggle, CSS `transition-all duration-200`, and tooltip-on-hover for icon labels. Mobile: drawer via `fixed inset-0` overlay + `translate-x-0/-translate-x-full` CSS toggle.
+
+---
+
+## Decision 19: Skeleton Loaders (US16)
+
+**Decision**: Skeleton loaders built with Tailwind `animate-pulse` utility on `<div>` placeholders. Implemented as thin wrapper components per pattern: `SkeletonCard`, `SkeletonRow`, `SkeletonText`. Applied on all TanStack Query `isLoading` states for: all 6 list pages, Dashboard KPI cards, Detail page headers.
+
+**Rationale**: Tailwind `animate-pulse` provides a pulsing grey shimmer with zero JS or external library. Matching the approximate shape of the loaded content reduces layout shift. TanStack Query's `isLoading` boolean is already available at every data-fetching point.
+
+**Alternatives considered**:
+- `react-loading-skeleton` npm package — polished but adds dependency.
+- CSS spinner — less informative (no shape hint), already used for button loading states.
+- Content-area fade-in only — no skeleton, still better than nothing but not "polished".
+
+**Outcome**: `src/components/ui/Skeleton.tsx` exports `SkeletonCard`, `SkeletonRow`, `SkeletonText`. Each list page replaces `{isLoading && <Spinner>}` with `{isLoading && <SkeletonRow count={5} />}`. Dashboard replaces inline spinner with `<SkeletonCard count={4} />`.
+
+---
+
+## Decision 20: Design Token System (US16)
+
+**Decision**: Extend `tailwind.config.ts` with a structured design token layer: `colors.brand.*`, `colors.surface.*`, `borderRadius.card`, `boxShadow.card`, `boxShadow.dropdown`. Typography scale uses Tailwind's existing `text-sm/base/lg/xl` — no custom font sizes. Inter font loaded via `@fontsource/inter` — EXCEPTION: this single package is added to satisfy the enterprise-grade typography requirement. All other npm constraints remain.
+
+**Rationale**: A token layer in Tailwind config ensures visual consistency without per-component overrides. `@fontsource/inter` is a small, tree-shaken font package (no CDN dependency, works offline in Docker) and Inter is the industry-standard SaaS UI font (Linear, Vercel, GitHub). This is the only justified exception to the no-new-packages rule.
+
+**Alternatives considered**:
+- Google Fonts CDN `<link>` tag — requires network; fails in offline Docker demo.
+- System font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI"`) — acceptable fallback but inconsistent cross-platform.
+- No custom font — does not meet "enterprise-grade" bar.
+
+**Outcome**: `npm install @fontsource/inter` added as the sole new frontend package. `tailwind.config.ts` extended with full token set. `src/style.css` imports `@fontsource/inter/400.css` and `@fontsource/inter/600.css`.
+
+---
+
+## Decision 21: Dashboard Modernisation (US16)
+
+**Decision**: Dashboard gets 4 KPI stat cards (Total Leads, Open Opportunities Value, Active Accounts, Activities Due Today), a pipeline funnel chart (already exists), and a recent activity feed. KPI cards use the `surface.card` token (white bg, `shadow-card`, `rounded-card`). Values use `text-2xl font-semibold`. Trend indicator (up/down arrow + % change) shown where calculable from existing data. No new chart library — Recharts already in use.
+
+**Rationale**: KPI cards + funnel + activity feed is the canonical CRM dashboard pattern (Zoho, HubSpot). All required data is available from existing API endpoints (no new backend work). Recharts is already a dependency. The dashboard currently has minimal polish; this closes the "outdated" gap without backend changes.
+
+**Alternatives considered**:
+- Full analytics with date-range selectors — requires new backend aggregation endpoints; out of scope.
+- Third-party dashboard widget library — adds heavy dependency; Recharts + Tailwind cards are sufficient.
+
+**Outcome**: `DashboardPage.tsx` redesigned with KPI stat card row, existing `PipelineFunnel` component (recoloured), and `RecentActivityFeed` component pulling from existing activities API.
+
+---
+
+## Decision 22: Accessibility Standards (US16)
+
+**Decision**: Target WCAG 2.1 AA compliance for all new and modified components. Minimum requirements: colour contrast ratio ≥4.5:1 for normal text, ≥3:1 for large text and UI components; all interactive elements keyboard-accessible (visible focus ring); all images and icons have `aria-label` or `aria-hidden`; form fields have associated `<label>` elements.
+
+**Rationale**: WCAG 2.1 AA is the legal and industry standard for enterprise SaaS. The brief explicitly requires accessibility standards. The indigo/white colour scheme with proper contrast ratios satisfies AA automatically for most text combinations.
+
+**Alternatives considered**:
+- WCAG 2.2 AA — slight increment with minor new criteria (target size, focus appearance); not yet universally required.
+- WCAG AAA — too strict; prohibits some colour combinations used in the brand palette.
+
+**Outcome**: Tailwind focus utilities (`focus-visible:ring-2 focus-visible:ring-indigo-500`) applied to all buttons, links, and form controls. Contrast ratios validated in `tailwind.config.ts` colour token definitions.

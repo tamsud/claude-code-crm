@@ -18,7 +18,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal open={open} onOpenChange={(o) => !o && onCancel()} title={title} size="sm">
-      <p className="mb-6 text-sm text-gray-600">{message}</p>
+      <p className="mb-6 text-sm text-slate-600">{message}</p>
       <div className="flex justify-end gap-3">
         <Button variant="secondary" onClick={onCancel}>
           Cancel

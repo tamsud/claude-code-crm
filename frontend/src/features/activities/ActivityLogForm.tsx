@@ -43,10 +43,10 @@ export function ActivityLogForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
         <select
           {...register('type')}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           {TYPES.map((t) => (
             <option key={t.value} value={t.value}>{t.label}</option>
@@ -55,12 +55,12 @@ export function ActivityLogForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-slate-700 mb-1">
           Subject <span className="text-red-500">*</span>
         </label>
         <input
           {...register('subject', { required: 'Required' })}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         {errors.subject && (
           <p className="mt-1 text-xs text-red-600">{errors.subject.message}</p>
@@ -68,28 +68,28 @@ export function ActivityLogForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
         <input
           {...register('activity_date', { required: 'Required' })}
           type="date"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
         <textarea
           {...register('notes')}
           rows={3}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Contact</label>
         <select
           {...register('contact_id')}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">— None —</option>
           {contacts.data?.items.map((c) => (
@@ -101,12 +101,12 @@ export function ActivityLogForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-slate-700 mb-1">
           Opportunity
         </label>
         <select
           {...register('opportunity_id')}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">— None —</option>
           {opportunities.data?.items.map((o) => (

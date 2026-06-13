@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Building2, Users, TrendingUp, DollarSign, BarChart2 } from 'lucide-react'
+import { Building2, Users, TrendingUp, DollarSign, Target } from 'lucide-react'
 import { queryKeys } from '@/queryKeys'
 import { accountsApi } from '@/api/accounts'
 import { leadsApi } from '@/api/leads'
@@ -7,9 +7,14 @@ import { opportunitiesApi } from '@/api/opportunities'
 import { activitiesApi } from '@/api/activities'
 import { KpiCard } from './KpiCard'
 import { ActivityFeed } from './ActivityFeed'
-import { PipelineFunnel } from './PipelineFunnel'
+import { PipelineFunnelChart } from './PipelineFunnelChart'
+import { DealsByStageChart } from './DealsByStageChart'
+import { PipelineByProbability } from './PipelineByProbability'
+import { StageCountChart } from './StageCountChart'
+import { WonLostSummary } from './WonLostSummary'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
-import { Card } from '@/components/ui/Card'
+import { SkeletonRow } from '@/components/ui/Skeleton'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   computeWeightedPipeline,
   computeOpenPipeline,
@@ -18,7 +23,17 @@ import {
 } from '@/utils/metrics'
 import { formatCurrency } from '@/utils/formatters'
 
+function ChartCard({ title, children, loading }: { title: string; children: React.ReactNode; loading?: boolean }) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+      <h3 className="text-sm font-semibold text-slate-700 mb-3">{title}</h3>
+      {loading ? <SkeletonRow count={3} /> : children}
+    </div>
+  )
+}
+
 export function DashboardPage() {
+  usePageTitle('Dashboard')
   const accounts = useQuery({
     queryKey: queryKeys.accounts.list({ size: 1 }),
     queryFn: () => accountsApi.list({ size: 1 }),
@@ -32,90 +47,117 @@ export function DashboardPage() {
     queryFn: () => opportunitiesApi.list({ size: 200 }),
   })
   const activities = useQuery({
-    queryKey: queryKeys.activities.list({ size: 10 }),
-    queryFn: () => activitiesApi.list({ size: 10 }),
+    queryKey: queryKeys.activities.list({ size: 30 }),
+    queryFn: () => activitiesApi.list({ size: 30 }),
   })
 
   const opps = opportunities.data?.items ?? []
   const allLeads = leads.data?.items ?? []
-
+  const activeLeads = computeActiveLeadCount(allLeads)
   const winRate = computeWinRate(opps)
-  const winRateLabel = winRate == null ? '—' : `${winRate}%`
 
   const error = accounts.error || leads.error || opportunities.error
 
-  return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+  // Pipeline stage counts for quick summary
+  const openOpps = opps.filter((o) => !['closed-won', 'closed-lost'].includes(o.stage))
 
+  return (
+    <div className="p-4 space-y-4">
       {error && (
-        <ErrorBanner
-          message={(error as Error).message ?? 'Failed to load dashboard data'}
-        />
+        <ErrorBanner message={(error as Error).message ?? 'Failed to load dashboard data'} />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── KPI row ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard
           label="Total Accounts"
           value={String(accounts.data?.total ?? 0)}
           icon={Building2}
+          color="indigo"
           loading={accounts.isLoading}
+          subtitle="Tracked companies"
         />
         <KpiCard
           label="Active Leads"
-          value={String(computeActiveLeadCount(allLeads))}
-          icon={Users}
+          value={String(activeLeads)}
+          icon={Target}
+          color="amber"
           loading={leads.isLoading}
+          subtitle="New + contacted + qualified"
         />
         <KpiCard
           label="Open Pipeline"
           value={formatCurrency(computeOpenPipeline(opps))}
           icon={DollarSign}
+          color="emerald"
           loading={opportunities.isLoading}
+          subtitle={`${openOpps.length} open deals`}
         />
         <KpiCard
-          label="Weighted Pipeline"
+          label="Weighted Value"
           value={formatCurrency(computeWeightedPipeline(opps))}
           icon={TrendingUp}
+          color="blue"
           loading={opportunities.isLoading}
+          subtitle="Probability-adjusted"
+        />
+        <KpiCard
+          label="Win Rate"
+          value={opportunities.isLoading ? '—' : (winRate == null ? '—' : `${winRate}%`)}
+          icon={Users}
+          color="violet"
+          loading={opportunities.isLoading}
+          subtitle="Closed won / total closed"
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="sm:col-span-1 bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm font-medium text-gray-500 mb-1">Win Rate</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {opportunities.isLoading ? '—' : winRateLabel}
-          </p>
-        </div>
-      </div>
+      {/* ── Main content: charts (left 2/3) + sidebar (right 1/3) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart2 className="h-4 w-4 text-gray-500" />
-            <h2 className="text-base font-semibold text-gray-900">
-              Pipeline by Stage
-            </h2>
+        {/* Charts column — takes 2/3 */}
+        <div className="lg:col-span-2 space-y-4">
+
+          {/* Pipeline funnel + probability side by side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ChartCard title="Pipeline by Stage" loading={opportunities.isLoading}>
+              <PipelineFunnelChart opportunities={opps} />
+            </ChartCard>
+            <ChartCard title="Deals by Stage (Count)" loading={opportunities.isLoading}>
+              <StageCountChart opportunities={opps} />
+            </ChartCard>
           </div>
-          {opportunities.isLoading ? (
-            <div className="h-[180px] flex items-center justify-center text-sm text-gray-400">
-              Loading…
-            </div>
-          ) : (
-            <PipelineFunnel opportunities={opps} />
-          )}
-        </Card>
 
-        <Card>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">
-            Recent Activity
-          </h2>
-          <ActivityFeed
-            activities={activities.data?.items ?? []}
-            loading={activities.isLoading}
-          />
-        </Card>
+          {/* Value pie + probability bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ChartCard title="Deals by Stage (Value)" loading={opportunities.isLoading}>
+              <DealsByStageChart opportunities={opps} />
+            </ChartCard>
+            <ChartCard title="Pipeline by Probability" loading={opportunities.isLoading}>
+              <PipelineByProbability opportunities={opps} />
+            </ChartCard>
+          </div>
+
+        </div>
+
+        {/* Right sidebar — takes 1/3 */}
+        <div className="space-y-4">
+
+          {/* Won / Lost summary */}
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Closed Deals</h3>
+            <WonLostSummary opportunities={opps} />
+          </div>
+
+          {/* Activity feed */}
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Recent Activity</h3>
+            <ActivityFeed
+              activities={activities.data?.items ?? []}
+              loading={activities.isLoading}
+            />
+          </div>
+
+        </div>
       </div>
     </div>
   )

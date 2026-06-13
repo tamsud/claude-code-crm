@@ -296,6 +296,72 @@
 
 ---
 
+## Phase 18: User Story 16 — Full UI/UX Modernisation (Priority: P4)
+
+**Goal**: Modernise the entire CRM frontend to enterprise SaaS standard. Responsive design, collapsible sidebar, two-panel login, skeleton loaders, KPI dashboard, design tokens, Inter font, WCAG 2.1 AA focus rings.
+
+**Independent Test**: Open app on 1366×768 → login page fits without scroll (two-panel). Collapse sidebar → smooth 200ms transition to 64px icon-only. Resize to 375px → hamburger drawer appears. Navigate to any list page with network throttled → skeleton loaders visible. Dashboard shows 4 KPI cards. Tab through any form → visible focus rings on all elements.
+
+### Step 1: Design Token Foundation & Font
+
+- [x] T099 [US16] Install `@fontsource/inter` in `frontend/` — run `npm install @fontsource/inter` and verify it appears in `frontend/package.json` dependencies
+- [x] T100 [P] [US16] Update `frontend/tailwind.config.ts` — extend theme with design tokens per `specs/005-crm-platform-enhancements/data-model.md` Frontend Design Token Model: `colors.brand.*` (`DEFAULT:#1e3a5f`, `light:#2d5f9e`, `accent:#6366f1`, `muted:#94a3b8`), `colors.surface.*` (`base:#f8fafc`, `card:#ffffff`, `border:#e2e8f0`, `overlay:rgba(0,0,0,0.4)`), `borderRadius.card:'0.75rem'`, `boxShadow.card`, `boxShadow.dropdown`
+- [x] T101 [P] [US16] Update `frontend/src/style.css` — add `@import '@fontsource/inter/400.css'` and `@import '@fontsource/inter/600.css'` at the top; add base layer CSS rule `* { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }`; add global `focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none` in the `@layer base` block for `a, button, input, select, textarea`
+
+**Checkpoint**: `npm run build` succeeds; Inter font bundled in output; `tailwind.config.ts` has full token set.
+
+### Step 2: Skeleton Loader Component
+
+- [x] T102 [US16] Create `frontend/src/components/ui/Skeleton.tsx` — export three named components using Tailwind `animate-pulse bg-slate-200 rounded`: `SkeletonText({ className? })` (single line, `h-4 w-full`); `SkeletonRow({ count=5, className? })` (renders `count` rows each with a wide bar + short bar side by side, `h-4`, separated by `gap-y-3`); `SkeletonCard({ count=4, className? })` (renders `count` cards in a `grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4`, each card is `h-24 rounded-card`)
+
+### Step 3: KPI Card Component
+
+- [x] T103 [US16] Create `frontend/src/components/ui/KpiCard.tsx` — interface `KpiCardProps { label: string; value: string | number; trend?: { direction: 'up'|'down'; percent: number }; icon?: React.ReactNode; loading?: boolean; error?: boolean }`; card uses `bg-surface-card shadow-card rounded-card p-6`; value uses `text-2xl font-semibold text-slate-900`; label uses `text-sm text-slate-500 mt-1`; trend up = `text-green-600` with `▲`, down = `text-red-500` with `▼`; when `loading=true` render `<SkeletonCard count={1} />`; when `error=true` show `"--"` as value
+
+### Step 4: useMediaQuery Hook
+
+- [x] T104 [P] [US16] Create `frontend/src/hooks/useMediaQuery.ts` — `export function useMediaQuery(query: string): boolean`; use `useState(() => window.matchMedia(query).matches)` + `useEffect` subscribing to `MediaQueryList.addEventListener('change', handler)` returning cleanup; return current match state
+
+### Step 5: Login Page Redesign
+
+- [x] T105 [US16] Update `frontend/src/features/auth/LoginPage.tsx` — redesign with two-panel responsive layout: outer `<div className="min-h-screen flex">` — left panel `<div className="hidden lg:flex lg:w-2/5 bg-brand flex-col justify-center p-12 text-white">` containing SVG/text logo, tagline `h1` "Your CRM, simplified.", descriptive paragraph; right panel `<div className="flex-1 flex items-center justify-center p-8 bg-surface-base">` containing centred form card `max-w-sm w-full` with: logo shown only on `<lg` (`lg:hidden`), heading "Sign in to your account", email/password inputs with `rounded-lg border-surface-border focus-visible:ring-2 focus-visible:ring-brand-accent`, submit button using `bg-brand-accent hover:bg-indigo-600 text-white rounded-lg px-4 py-2.5 w-full focus-visible:ring-2`, inline error message; preserve existing `react-hook-form` submission and `useAuth().login()` call
+
+### Step 6: Sidebar Collapsible Redesign
+
+- [x] T106 [US16] Create `frontend/src/hooks/useMediaQuery.ts` — skip if T104 already created this file; this task is a no-op guard
+- [x] T107 [US16] Update `frontend/src/components/layout/NavSidebar.tsx` — add collapsed state: `const [collapsed, setCollapsed] = useState(() => localStorage.getItem('crm-sidebar-collapsed') === '1')`; add `mobileOpen` state for drawer; import `useMediaQuery` from `../../hooks/useMediaQuery`; `const isMobile = useMediaQuery('(max-width: 768px)')`; sidebar width: `transition-all duration-200 ${collapsed && !isMobile ? 'w-16' : 'w-60'}`; on mobile use `fixed inset-y-0 left-0 z-50 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200`; add backdrop `<div className="fixed inset-0 bg-surface-overlay z-40 lg:hidden" onClick={() => setMobileOpen(false)} />`; add chevron toggle button (absolute right-0 top-4, `ChevronLeft`/`ChevronRight` from lucide-react, rotates based on state); persist collapse to localStorage on toggle; when collapsed hide text labels `{!collapsed && <span>{label}</span>}`; add Tooltip wrapper on each nav item when collapsed showing the label; preserve all existing nav links, active states, brand colour background, logo, and bottom user profile section from T083/T053
+
+- [x] T108 [P] [US16] Add hamburger menu button to top bar — update or create `frontend/src/components/layout/TopBar.tsx` (or the existing top navigation component): add `Menu` icon button (lucide-react) visible only on `<md` (`md:hidden`), `onClick` prop to call `setMobileOpen(true)` passed down from layout; if no TopBar exists, add the hamburger button directly inside `NavSidebar.tsx` as a floating `<button>` positioned at `top-4 left-4` visible only when `isMobile && !mobileOpen`
+
+### Step 7: Dashboard Modernisation
+
+- [x] T109 [US16] Create `frontend/src/features/dashboard/RecentActivityFeed.tsx` — self-contained component; uses existing `useActivities` hook (or direct useQuery) with params `{ sort_by: 'created_at', sort_dir: 'desc', page: 1, size: 5 }`; loading state: `<SkeletonRow count={5} />`; error state: `<p className="text-sm text-slate-400">Unable to load recent activity</p>`; each activity row: activity type badge (existing `<Badge>`) + subject text + relative timestamp (`formatDistanceToNow` from `date-fns` already in use or use `Intl.RelativeTimeFormat`); wrap in `<section>` with heading "Recent Activity"
+
+- [x] T110 [US16] Update `frontend/src/features/dashboard/DashboardPage.tsx` — add KPI card row: `<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">` with four `<KpiCard>` instances; data from existing hooks: Total Leads from `useLeads` total count; Open Opportunities Value from `useOpportunities` items summed; Active Accounts from `useAccounts` total count; Activities Due Today filtered from `useActivities` where `due_date` is today; icons from lucide-react (`Users`, `DollarSign`, `Building2`, `Calendar`); add `<RecentActivityFeed />` below existing pipeline funnel; preserve existing `<PipelineFunnel>` component
+
+### Step 8: Skeleton Loaders on List Pages
+
+- [x] T111 [P] [US16] Update `frontend/src/features/accounts/AccountsListPage.tsx` — replace existing `isLoading` spinner/empty state with `{isLoading && <SkeletonRow count={5} />}` above the accounts table; only render the table when `!isLoading && data`
+- [x] T112 [P] [US16] Update `frontend/src/features/contacts/ContactsListPage.tsx` — same pattern: replace loading spinner with `<SkeletonRow count={5} />`
+- [x] T113 [P] [US16] Update `frontend/src/features/leads/LeadsListPage.tsx` — same pattern: `<SkeletonRow count={5} />` during `isLoading`
+- [x] T114 [P] [US16] Update `frontend/src/features/opportunities/OpportunitiesListPage.tsx` — same pattern: `<SkeletonRow count={5} />` during `isLoading`
+- [x] T115 [P] [US16] Update `frontend/src/features/activities/ActivitiesLogPage.tsx` — same pattern: `<SkeletonRow count={5} />` during `isLoading`
+- [x] T116 [P] [US16] Update `frontend/src/features/admin/UserManagementPage.tsx` — same pattern: `<SkeletonRow count={5} />` during `isLoading`
+
+### Step 9: Detail Page Skeleton Headers
+
+- [x] T117 [P] [US16] Update lead detail page (e.g. `frontend/src/features/leads/LeadDetailPage.tsx` or similar) — add `{isLoading && <SkeletonText className="h-8 w-48 mb-4" />}` for the page heading area; apply same pattern to contact, account, opportunity detail pages — search for existing detail page files and apply `<SkeletonText>` to the `isLoading` heading state
+
+### Step 10: TypeScript Validation & Visual QA
+
+- [x] T118 [P] [US16] Run `cd frontend && npx tsc --noEmit` — fix all TypeScript errors introduced by US16 changes (KpiCard, Skeleton, useMediaQuery imports, NavSidebar collapsed state types); zero errors required
+- [x] T119 [P] [US16] Run `cd frontend && npx vitest run` — all existing unit tests pass with US16 changes applied; no regressions
+- [x] T120 [US16] Run quickstart Scenario 11 validation from `specs/005-crm-platform-enhancements/quickstart.md` — execute sub-scenarios 11a through 11h and verify all outcomes match: login two-panel on 1366×768, sidebar collapse in 200ms, mobile drawer, skeleton loaders, KPI cards populated, Inter font in computed styles, focus rings visible on Tab, design tokens in `tailwind.config.ts`
+
+**Checkpoint**: All 8 sub-scenarios of Scenario 11 pass. `tsc --noEmit` reports zero errors. Vitest passes.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -313,6 +379,7 @@ Phase 4 (US2 RBAC) → Phase 10 (US14 Sort/Filter) [all routers need auth before
 Phase 6 (US6 Mock Email) → independent, only needs Phase 2 complete
 Phase 11 (US7 Docker) → independent after all code phases complete
 Phase 12-16 (UI/docs) → independent, any time after Phase 2
+Phase 18 (US16 UI/UX Modernisation) → independent; MUST come after Phase 12 (US9) since T100 extends tailwind.config.ts started there
 ```
 
 ### User Story Dependencies
@@ -333,6 +400,7 @@ Phase 12-16 (UI/docs) → independent, any time after Phase 2
 | US11 (README) | Code phases complete | US12, US13 |
 | US12 (Demo Guide) | App fully functional | US13 |
 | US13 (E2E Guide) | US12 complete | — |
+| US16 (UI/UX Modernisation) | US9 complete (tailwind.config.ts), Phase 2 frontend done | US10, US11, US12, US13 |
 
 ### Within Each Phase (local ordering)
 
@@ -372,6 +440,27 @@ Parallel: T085 + T086 + T087 (gitignore files)
 Parallel: T088 + T089 + T090 (README files)
 ```
 
+### Phase 18: UI/UX Modernisation (parallelisable within each step)
+
+```
+# Step 1: token foundation (T099 must complete before T100/T101 can use tokens)
+Sequential: T099 → T100 + T101 (parallel after install)
+# Step 2-4: independent components
+Parallel: T102 + T103 + T104 (Skeleton, KpiCard, useMediaQuery — different files)
+# Step 5-7: depend on above components
+T105 (LoginPage) — after T100 (brand tokens needed)
+T107 (NavSidebar) — after T104 (useMediaQuery needed)
+T108 (TopBar) — parallel with T107
+T109 + T110 (Dashboard) — parallel, both after T102 + T103
+# Step 8: all list page updates parallel
+Parallel: T111 + T112 + T113 + T114 + T115 + T116 (different files)
+# Step 9
+T117 — after T102 (Skeleton needed)
+# Step 10: validation
+Parallel: T118 + T119 (tsc and vitest)
+T120 — after T118 + T119
+```
+
 ---
 
 ## Implementation Strategy
@@ -393,7 +482,7 @@ Parallel: T088 + T089 + T090 (README files)
 - Add US4+US5+US15 (user management + profile) → full user lifecycle
 - Add US14 (sort/filter) → major UX improvement across all list pages
 - Add US7 (Docker) → deployment readiness
-- Add US9 (UI visual) → polish
+- Add US16 (UI/UX Modernisation) → enterprise-grade visual polish sprint (22 tasks, T099–T120)
 - Add US10/US11/US12/US13 (docs) → documentation sprint
 
 ---
@@ -407,3 +496,10 @@ Parallel: T088 + T089 + T090 (README files)
 - JWT secret must be ≥32 chars in production; `.env.example` has a placeholder, not a real secret
 - Alembic migrations run automatically in the Docker CMD — no manual migration step needed
 - The `PATCH /api/v1/users/me` endpoint accepts only `display_name` — it cannot change role or is_active
+- US16 tasks are entirely frontend — no new backend routes; all KPI data comes from existing API endpoints
+- T106 is a no-op guard task — T104 creates `useMediaQuery.ts`; T106 ensures it is not duplicated
+- `@fontsource/inter` is the sole new npm package permitted; all other US16 work uses Tailwind + existing deps
+- Sidebar `localStorage` key `crm-sidebar-collapsed` is a UX preference only — never store auth data in localStorage
+- KPI "Open Opportunities Value" sums the `value` field of all non-closed-lost/closed-won opportunities from the existing API
+- Skeleton components use Tailwind `animate-pulse` only — no external skeleton library
+- WCAG 2.1 AA: focus ring (`focus-visible:ring-2 focus-visible:ring-indigo-500`) applied globally in `style.css` base layer covers all interactive elements automatically
